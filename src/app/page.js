@@ -10,7 +10,7 @@ export default function Home() {
       icon: <Sparkles className="w-5 h-5" />,
       title: "Generate Questions with AI",
       description: "Let AI guide you through analyzing your startup metrics",
-      link: "/questions/ai",
+      link: "/generate",
       badge: "PRO",
       preview: "Answer questions about your business model and metrics",
     },
