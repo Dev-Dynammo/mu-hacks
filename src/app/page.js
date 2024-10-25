@@ -15,12 +15,13 @@ export default function Home() {
       preview: "Answer questions about your business model and metrics",
     },
     {
-      icon: <Layout className="w-5 h-5" />,
-      title: "Browse Templates",
-      description: "Pre-made analysis frameworks you can customize",
-      link: "/templates",
-      preview: "Choose from various startup analysis templates",
+      icon: <PlusCircle className="w-5 h-5" />,
+      title: "Start from Scratch",
+      description: "Build a custom analysis, step by step",
+      link: "/questions/1",
+      preview: "Create your own analysis framework",
     },
+
     {
       icon: <FileText className="w-5 h-5" />,
       title: "Import Sales Data",
@@ -29,11 +30,11 @@ export default function Home() {
       preview: "Transform your data into actionable insights",
     },
     {
-      icon: <PlusCircle className="w-5 h-5" />,
-      title: "Start from Scratch",
-      description: "Build a custom analysis, step by step",
-      link: "/questions/1",
-      preview: "Create your own analysis framework",
+      icon: <Layout className="w-5 h-5" />,
+      title: "Browse Templates",
+      description: "Pre-made analysis frameworks you can customize",
+      link: "/templates",
+      preview: "Choose from various startup analysis templates",
     },
   ];
 
