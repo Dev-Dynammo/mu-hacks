@@ -1,4 +1,3 @@
-// app/results/page.jsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -16,32 +15,16 @@ import {
   Users,
   DollarSign,
   Target,
+  Loader,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { questions } from "@/data/questions";
+import MarkdownViewer from "@/components/markdownviwer";
 
 const getAISummary = (answers, fileData) => `
-## Business Overview
-🎯 **Business Model**: ${answers[1] || "N/A"}
-💰 **Market Size**: ${answers[2] || "N/A"}
-📈 **Growth Rate**: Projecting ${answers[3] || "N/A"} growth
+Your SaaS business currently operates with a low customer acquisition cost and high gross margins, making it well-positioned for scalable growth. However, the market size is limited, and your customer lifetime value (LTV) could be higher to maximize profitability. With a lengthy sales cycle and low recurring revenue percentage, your focus should be on improving customer retention and recurring revenue models, such as subscriptions or tiered pricing.
 
-## Financial Metrics
-- **CAC**: ${answers[3] || "N/A"}
-- **LTV**: ${answers[4] || "N/A"}
-- **Gross Margins**: ${answers[6] || "N/A"}%
-
-## Key Insights
-1. Your ${answers[1] || ""} business model shows strong potential in the ${
-  answers[2] || ""
-} market
-2. Customer acquisition costs are ${answers[3] ? "optimal" : "to be optimized"}
-3. Growth metrics indicate ${answers[5] ? "positive" : "room for"} trajectory
-
-## Recommendations
-- Focus on optimizing ${answers[7] || "sales cycle"} to improve conversion
-- Target ${answers[8] || "key segments"} for maximum impact
-- Leverage ${answers[10] || "competitive advantages"} for market positioning
+To drive growth, target specific sub-segments within your adult customer base, enhance your product's unique value, and consider expanding into adjacent markets. Tracking Monthly Recurring Revenue (MRR) alongside units sold will help monitor recurring revenue improvements and guide future growth decisions. By refining the sales cycle, optimizing costs, and offering more upsell opportunities, your business can boost customer value, increase market penetration, and secure a competitive edge. 
 `;
 
 export default function Results() {
@@ -51,12 +34,76 @@ export default function Results() {
   const [isLoading, setIsLoading] = useState(false);
   const [answers, setAnswers] = useState({});
   const [currentSection, setCurrentSection] = useState("summary");
+  const [showSummary, setShowSummary] = useState(false);
+  const [output, setOutput] = useState({});
+
+  const generatePrompt = (questions, answers) => {
+    const mappedData = questions.map((q) => ({
+      question: q.question,
+      answer: answers[q.id] || "",
+    }));
+
+    let promptString = `Please analyze the following business information and provide strategic insights:\n\n`;
+
+    promptString += `Current State:\n`;
+    mappedData.forEach((item) => {
+      promptString += `- Question: ${item.question}\n  Answer: ${item.answer}\n\n`;
+    });
+
+    promptString += `Please provide analysis in the following areas:\n\n`;
+    promptString += `1. Strategic Analysis:\n`;
+    promptString += `   - Evaluate the current approach\n`;
+    promptString += `   - Identify core strengths and weaknesses\n\n`;
+    promptString += `2. Recommendations:\n`;
+    promptString += `   - Provide actionable improvements\n`;
+    promptString += `   - Suggest strategic priorities\n\n`;
+    promptString += `3. Risk Factors:\n`;
+    promptString += `   - Identify potential challenges\n`;
+    promptString += `   - Suggest mitigation strategies\n\n`;
+    promptString += `4. Opportunities:\n`;
+    promptString += `   - Highlight growth potential\n`;
+    promptString += `   - Suggest next steps\n`;
+
+    return promptString;
+  };
+
+  const srver = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:11434/api/generate", {
+        // Replace with your API endpoint
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama3",
+          prompt: generatePrompt(questions, answers),
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit answers");
+      }
+
+      const result = await response.json();
+      setOutput(result);
+      console.log("Submission successful:", result);
+    } catch (err) {
+      console.error("Error submitting answers:", err);
+    } finally {
+      setIsLoading(false);
+      setShowSummary(true);
+    }
+  };
 
   useEffect(() => {
     const savedAnswers = localStorage.getItem("questionAnswers");
+
     if (savedAnswers) {
       setAnswers(JSON.parse(savedAnswers));
     }
+
+    srver();
   }, []);
 
   const onDrop = useCallback((acceptedFiles) => {
@@ -93,6 +140,18 @@ export default function Results() {
       "application/vnd.ms-excel": [".xls"],
     },
   });
+
+  const LoadingSpinner = () => (
+    <div className="flex flex-col items-center justify-center p-8 space-y-4">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      >
+        <Loader className="w-8 h-8 text-blue-500" />
+      </motion.div>
+      <p className="text-gray-400">Analyzing your business data...</p>
+    </div>
+  );
 
   return (
     <div className="relative min-h-screen bg-black text-white">
@@ -176,34 +235,20 @@ export default function Results() {
                     <BarChart3 className="w-5 h-5 text-blue-500" />
                     AI Analysis
                   </h2>
-                  <div className="prose prose-invert max-w-none">
-                    <ReactMarkdown
-                      components={{
-                        h2: ({ children }) => (
-                          <h2 className="text-lg font-semibold text-blue-400 mt-6 mb-3">
-                            {children}
-                          </h2>
-                        ),
-                        p: ({ children }) => (
-                          <p className="text-gray-300 mb-4">{children}</p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="space-y-2 mb-4">{children}</ul>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-gray-300 flex items-start">
-                            <span className="text-blue-500 mr-2">•</span>
-                            {children}
-                          </li>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="text-blue-300">{children}</strong>
-                        ),
-                      }}
-                    >
-                      {getAISummary(answers, fileData)}
-                    </ReactMarkdown>
-                  </div>
+                  {isLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    showSummary && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="prose prose-invert max-w-none"
+                      >
+                        <MarkdownViewer analysisResponse={output.response} />
+                      </motion.div>
+                    )
+                  )}
                 </div>
 
                 {/* Detailed Responses */}
@@ -223,7 +268,7 @@ export default function Results() {
                 </div>
               </div>
             ) : (
-              /* Upload Section - Your existing upload UI */
+              /* Upload Section */
               <div className="space-y-6">
                 {/* ... Your existing upload section code ... */}
               </div>
